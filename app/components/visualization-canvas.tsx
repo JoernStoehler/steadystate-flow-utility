@@ -6,13 +6,15 @@ interface VisualizationCanvasProps {
   width: number;
   height: number;
   className?: string;
-  onImageLoad?: (imageData: ImageData) => void;
+  onImageLoad?: (imageData: ImageData, dimensions?: { width: number; height: number }) => void;
   obstacleMask?: boolean[][] | null;
   showMask?: boolean;
   velocityField?: { u: number[][]; v: number[][] } | null;
   vectorScale?: number;
   displayGridDensity?: number;
   onAddForce?: (force: { x: number; y: number; fx: number; fy: number }) => void;
+  forceVectors?: { x: number; y: number; fx: number; fy: number }[];
+  showVelocity?: boolean;
 }
 
 export default function VisualizationCanvas({
@@ -26,9 +28,14 @@ export default function VisualizationCanvas({
   vectorScale = 1,
   displayGridDensity = 16,
   onAddForce,
+  forceVectors = [],
+  showVelocity = true,
 }: VisualizationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  // Store the loaded image to persist it across renders
+  const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
 
   // Force vector drawing state
   const [isDrawingForce, setIsDrawingForce] = useState(false);
@@ -85,14 +92,15 @@ export default function VisualizationCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Get mouse position in canvas coordinates (fractional [0,1] range)
     const rect = canvas.getBoundingClientRect();
-    const endX = (e.clientX - rect.left) / width;
-    const endY = (e.clientY - rect.top) / height;
+    const endX = (e.clientX - rect.left) / width; // normalized [0,1] coordinates
+    const endY = (e.clientY - rect.top) / height; // normalized [0,1] coordinates
 
-    // Calculate the force components (ensure they're scaled appropriately)
-    const FORCE_SCALE = 0.2; // Scale down the force for better control
-    const fx = (endX - forceStartPoint.x) * FORCE_SCALE;
-    const fy = (endY - forceStartPoint.y) * FORCE_SCALE;
+    // Calculate the force components directly in the normalized space
+    // No additional scaling - the forces should be roughly in [0,1] range too for a full-canvas drag
+    const fx = endX - forceStartPoint.x; // Leave in normalized [0,1] range
+    const fy = endY - forceStartPoint.y; // Leave in normalized [0,1] range
 
     // Add the force vector
     onAddForce({
@@ -136,6 +144,9 @@ export default function VisualizationCanvas({
 
       const image = new Image();
       image.onload = () => {
+        // Store the image for later use
+        setLoadedImage(image);
+
         // Create a temporary canvas to get the image data
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = image.width;
@@ -147,29 +158,30 @@ export default function VisualizationCanvas({
           tempCtx.drawImage(image, 0, 0);
           const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
 
-          // Pass the image data to the parent component
-          if (onImageLoad) {
-            onImageLoad(imageData);
+          // Calculate new canvas dimensions that preserve aspect ratio
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 600;
+
+          const aspectRatio = image.width / image.height;
+          let newWidth, newHeight;
+
+          if (aspectRatio >= 1) {
+            // Landscape or square orientation
+            newWidth = Math.min(MAX_WIDTH, image.width);
+            newHeight = newWidth / aspectRatio;
+          } else {
+            // Portrait orientation
+            newHeight = Math.min(MAX_HEIGHT, image.height);
+            newWidth = newHeight * aspectRatio;
           }
 
-          // Also draw the image on our visible canvas
-          const canvas = canvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.clearRect(0, 0, width, height);
+          // Round to nearest even number for better rendering
+          newWidth = Math.round(newWidth);
+          newHeight = Math.round(newHeight);
 
-              // Draw the image scaled to fit the canvas
-              const scale = Math.min(width / image.width, height / image.height);
-              const scaledWidth = image.width * scale;
-              const scaledHeight = image.height * scale;
-
-              // Center the image
-              const offsetX = (width - scaledWidth) / 2;
-              const offsetY = (height - scaledHeight) / 2;
-
-              ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
-            }
+          // Pass the image data and dimensions to the parent component
+          if (onImageLoad) {
+            onImageLoad(imageData, { width: newWidth, height: newHeight });
           }
         }
       };
@@ -177,9 +189,7 @@ export default function VisualizationCanvas({
     };
 
     reader.readAsDataURL(file);
-  };
-
-  // Draw the visualization (mask, grid, velocity field)
+  }; // Draw the visualization (image, mask, grid, velocity field)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -190,11 +200,30 @@ export default function VisualizationCanvas({
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // If we have a mask and should show it, draw it
+    // Check if we have a loaded image
+    if (loadedImage) {
+      // Draw the original image (under the mask if showing)
+      if (!showMask || !obstacleMask) {
+        // Draw the image scaled to fit the canvas
+        const scale = Math.min(width / loadedImage.width, height / loadedImage.height);
+        const scaledWidth = loadedImage.width * scale;
+        const scaledHeight = loadedImage.height * scale;
+
+        // Center the image
+        const offsetX = (width - scaledWidth) / 2;
+        const offsetY = (height - scaledHeight) / 2;
+
+        ctx.drawImage(loadedImage, offsetX, offsetY, scaledWidth, scaledHeight);
+      }
+    }
+
+    // If we have a mask and should show it, draw it on top
     if (showMask && obstacleMask && obstacleMask.length > 0) {
-      // Draw the mask
       drawMask(ctx, obstacleMask, width, height);
-    } else {
+    }
+
+    // If no image is loaded, draw the placeholder grid
+    if (!loadedImage && !obstacleMask) {
       // Draw a placeholder grid
       ctx.strokeStyle = '#888';
       ctx.lineWidth = 0.5;
@@ -222,17 +251,65 @@ export default function VisualizationCanvas({
       ctx.fillText('Drag & drop an image here', width / 2, height / 2);
     }
 
-    // Draw velocity field if available
-    if (velocityField && velocityField.u.length > 0 && velocityField.v.length > 0) {
+    // Draw velocity field if available and enabled
+    if (showVelocity && velocityField && velocityField.u.length > 0 && velocityField.v.length > 0) {
       drawVelocityField(ctx, velocityField, displayGridDensity, width, height, vectorScale);
+    }
+
+    // Draw existing force vectors
+    if (forceVectors && forceVectors.length > 0) {
+      // Draw the force vectors
+      ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+      ctx.lineWidth = 2;
+
+      for (const force of forceVectors) {
+        // Convert normalized positions to canvas pixel coordinates
+        const startX = force.x * width; // startX in pixels
+        const startY = force.y * height; // startY in pixels
+
+        // No additional scaling needed - forces are already in normalized [0,1] range
+        const endX = startX + force.fx * width; // Scale to canvas width
+        const endY = startY + force.fy * height; // Scale to canvas height
+
+        // Draw the line
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Draw an arrowhead
+        const arrowSize = 10;
+        const angle = Math.atan2(force.fy, force.fx);
+
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+          endX - arrowSize * Math.cos(angle - Math.PI / 6),
+          endY - arrowSize * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          endX - arrowSize * Math.cos(angle + Math.PI / 6),
+          endY - arrowSize * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw a small circle at the start point
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.beginPath();
+        ctx.arc(startX, startY, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     // Draw force vector being created (if any)
     if (isDrawingForce && forceStartPoint && currentMousePos) {
-      const startX = forceStartPoint.x * width;
-      const startY = forceStartPoint.y * height;
-      const currentX = currentMousePos.x * width;
-      const currentY = currentMousePos.y * height;
+      // Convert normalized positions to canvas pixel coordinates
+      const startX = forceStartPoint.x * width; // startX in pixels
+      const startY = forceStartPoint.y * height; // startY in pixels
+      const currentX = currentMousePos.x * width; // currentX in pixels
+      const currentY = currentMousePos.y * height; // currentY in pixels
 
       // Draw the force vector line
       ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
@@ -277,6 +354,9 @@ export default function VisualizationCanvas({
     isDrawingForce,
     forceStartPoint,
     currentMousePos,
+    loadedImage,
+    forceVectors,
+    showVelocity,
   ]);
 
   return (

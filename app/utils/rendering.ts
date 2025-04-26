@@ -129,7 +129,8 @@ export function drawVelocityField(
       const startY = y * cellHeight + cellHeight / 2;
 
       // Calculate the vector endpoint with scaling
-      const vectorLength = Math.min(20, magnitude * 50) * vectorScale;
+      // Use a stronger scaling factor to make the flow visualization more visible
+      const vectorLength = Math.min(30, magnitude * 80) * vectorScale;
       const endX = startX + (uVal / magnitude) * vectorLength;
       const endY = startY + (vVal / magnitude) * vectorLength;
 

@@ -23,6 +23,7 @@ interface DisplaySettings {
   showMask: boolean;
   vectorScale: number;
   displayGridDensity: number;
+  showVelocity: boolean;
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -33,9 +34,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  // Canvas dimensions for display
-  const [canvasWidth] = useState(600);
-  const [canvasHeight] = useState(400);
+  // Canvas dimensions for display (will adjust based on image aspect ratio)
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 600, height: 400 });
 
   // Core simulation state
   const [simulationGridConfig, setSimulationGridConfig] = useState<SimulationGridConfig>({
@@ -52,7 +52,8 @@ export default function Home() {
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>({
     showMask: false,
     vectorScale: 1,
-    displayGridDensity: 16,
+    displayGridDensity: 8,
+    showVelocity: true,
   });
 
   // Generate mask when image data or grid configuration changes
@@ -109,18 +110,26 @@ export default function Home() {
         <div className="flex-1">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <VisualizationCanvas
-              width={canvasWidth}
-              height={canvasHeight}
-              onImageLoad={imageData => setObstacleImageData(imageData)}
+              width={canvasDimensions.width}
+              height={canvasDimensions.height}
+              onImageLoad={(imageData, dimensions) => {
+                setObstacleImageData(imageData);
+                // Update canvas dimensions to match image aspect ratio
+                if (dimensions) {
+                  setCanvasDimensions(dimensions);
+                }
+              }}
               obstacleMask={obstacleMask}
               showMask={displaySettings.showMask}
               velocityField={velocityField}
               vectorScale={displaySettings.vectorScale}
               displayGridDensity={displaySettings.displayGridDensity}
+              showVelocity={displaySettings.showVelocity}
               onAddForce={force => {
                 // Add the new force to the existing forces
                 setForceVectors(currentForces => [...currentForces, force]);
               }}
+              forceVectors={forceVectors}
             />
           </div>
         </div>
@@ -196,6 +205,23 @@ export default function Home() {
               </div>
 
               <div>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={displaySettings.showVelocity}
+                    onChange={() =>
+                      setDisplaySettings({
+                        ...displaySettings,
+                        showVelocity: !displaySettings.showVelocity,
+                      })
+                    }
+                    className="mr-2"
+                  />
+                  <span>Show Velocity Field</span>
+                </label>
+              </div>
+
+              <div>
                 <label htmlFor="vector-scale" className="block mb-1">
                   Vector Scale:
                 </label>
@@ -229,9 +255,9 @@ export default function Home() {
                   <input
                     id="grid-density"
                     type="range"
-                    min="4"
+                    min="1"
                     max="32"
-                    step="4"
+                    step="1"
                     value={displaySettings.displayGridDensity}
                     onChange={e =>
                       setDisplaySettings({
@@ -273,6 +299,23 @@ export default function Home() {
                   setForceVectors(currentForces => currentForces.filter((_, i) => i !== index));
                 }}
                 onClearForces={() => setForceVectors([])}
+                onAddForce={() => {
+                  // Add a default force in the middle of the canvas pointing right
+                  const newForce: ForceVector = {
+                    x: 0.2, // Near left side
+                    y: 0.5, // Middle height
+                    fx: 0.5, // Strong force to the right
+                    fy: 0, // No vertical force
+                  };
+                  setForceVectors(currentForces => [...currentForces, newForce]);
+                }}
+                onUpdateForce={(index, newForce) => {
+                  setForceVectors(currentForces => {
+                    const updatedForces = [...currentForces];
+                    updatedForces[index] = newForce;
+                    return updatedForces;
+                  });
+                }}
               />
 
               <div className="mt-6">
@@ -286,15 +329,41 @@ export default function Home() {
                     }
                   }}
                   disabled={!obstacleMask || isSimulating || forceVectors.length === 0}
-                  className={`px-4 py-2 rounded-md font-medium ${
+                  className={`px-4 py-2 rounded-md font-medium text-lg ${
                     !obstacleMask || isSimulating || forceVectors.length === 0
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-green-600 text-white hover:bg-green-700 shadow-md'
                   }`}
                 >
-                  {isSimulating ? 'Simulating...' : 'Run Simulation'}
+                  {isSimulating ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Simulating...
+                    </span>
+                  ) : (
+                    'Run Simulation'
+                  )}
                 </button>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-600 mt-2">
                   {forceVectors.length === 0
                     ? 'Add force vectors by clicking and dragging on the canvas'
                     : `${forceVectors.length} force vector(s) added`}

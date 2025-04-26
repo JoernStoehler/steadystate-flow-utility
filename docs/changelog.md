@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-04-26
+
+- Fixed image processing to support black and white images in addition to transparent PNGs.
+- Added dynamic canvas sizing to preserve image aspect ratio.
+- Fixed force vector visualization to display vectors at proper scale.
+- Improved force vector drawing with consistent sizing between drawing and final display.
+- Enhanced display controls with support for grid densities down to 1.
+- Added editable force vectors in the ForceVectorTable component.
 - Fixed import statements to adhere to TypeScript verbatimModuleSyntax rules.
 
 ## [0.3.0] - 2025-04-26
