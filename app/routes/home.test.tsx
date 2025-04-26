@@ -1,17 +1,17 @@
-// filepath: /home/joern/Documents/Projects/template-reactrouterv7-copilot/app/routes/home.test.tsx
 import { render, screen } from '@testing-library/react';
 import { createRoutesStub } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
 
+import type { Route } from './+types/home';
 import Home, { meta } from './home';
 
-// Mock the Welcome component
-vi.mock('../welcome/welcome', () => ({
-  Welcome: () => <div data-testid="mock-welcome">Welcome Component</div>,
+// Mock the VisualizationCanvas component
+vi.mock('../components/visualization-canvas', () => ({
+  default: () => <div data-testid="mock-canvas">Canvas Component</div>,
 }));
 
 describe('Home', () => {
-  it('renders the Welcome component using createRoutesStub', () => {
+  it('renders the visualization canvas', () => {
     const Stub = createRoutesStub([
       {
         path: '/home',
@@ -20,18 +20,19 @@ describe('Home', () => {
     ]);
 
     render(<Stub initialEntries={['/home']} />);
-    expect(screen.getByTestId('mock-welcome')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
   });
 
   describe('meta function', () => {
     it('returns the correct meta data', () => {
-      const metaData = meta({} as any);
+      // Use empty object with type assertion to Route.MetaArgs
+      const metaData = meta({} as Route.MetaArgs);
 
       expect(metaData).toHaveLength(2);
-      expect(metaData[0]).toEqual({ title: 'New React Router App' });
+      expect(metaData[0]).toEqual({ title: 'Steady-State Flow Utility' });
       expect(metaData[1]).toEqual({
         name: 'description',
-        content: 'Welcome to React Router!',
+        content: 'Interactive 2D steady-state fluid flow visualization',
       });
     });
   });
