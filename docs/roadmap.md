@@ -98,10 +98,20 @@ This roadmap outlines the development steps for the Steady-State Flow Utility. T
 
 - ✅ **Task 3.3: Simulation Execution Loop**  
   _(file: `app/routes/home.tsx`)_
+
   - ✅ `useEffect` on `obstacleMask` + `forceVectors`
   - ✅ Run ~100 iterations → update `velocityField`
   - ⚙️ Optional `isSimulating` loading indicator
   - 🎯 **Goal:** Steady-state loop
+
+- ✅ **Task 3.4: Physics Enhancements**  
+  _(files: `app/utils/simulation.ts`, `app/utils/simulation.test.ts`, `docs/math.md`)_
+  - ✅ Implement semi-Lagrangian advection
+  - ✅ Add viscous diffusion effects
+  - ✅ Create `runSteadyStateSimulation` function
+  - ✅ Add new simulation parameters (timeStep, viscosity, iterations)
+  - ✅ Document mathematical foundations in `math.md`
+  - 🎯 **Goal:** Physically realistic and beautiful flow patterns
 
 ---
 
@@ -181,9 +191,29 @@ This roadmap outlines the development steps for the Steady-State Flow Utility. T
 
 ---
 
+## Phase 7: Advanced Simulation Controls (Est: 1-2 days)
+
+- ⬜ **Task 7.1: Physics Parameter Controls**  
+  _(file: `app/routes/home.tsx`)_
+
+  - ⬜ Add UI controls for viscosity and timeStep
+  - ⬜ Add slider for iteration count
+  - ⬜ Add visualizations for different flow regimes
+  - 🎯 **Goal:** User control of flow physics
+
+- ⬜ **Task 7.2: Flow Visualization Enhancements**  
+  _(files: `app/utils/rendering.ts`, `app/components/visualization-canvas.tsx`)_
+  - ⬜ Add streamline visualization option
+  - ⬜ Add color-coded velocity magnitude display
+  - ⬜ Add pressure field visualization
+  - 🎯 **Goal:** Richer visual feedback
+
 ## 🚀 Future Considerations (Post v1.0)
 
-- Advanced solvers in `app/utils/simulation.ts`
-- Save/load masks & forces (`localStorage` or backend)
-- Streamline & streamline visualizations
-- Enhanced boundary options
+- ⬜ Advanced numerical solvers (multigrid, conjugate gradient)
+- ⬜ Save/load simulation states (`localStorage` or backend)
+- ⬜ Particle advection for streak visualization
+- ⬜ Time-varying flows with animation
+- ⬜ Additional boundary condition types (e.g., inflow, outflow)
+- ⬜ Flow pattern analysis and statistics
+- ⬜ Turbulence modeling for higher Reynolds numbers

@@ -120,6 +120,62 @@ export function copySimulationGrid(grid: SimulationGrid): SimulationGrid {
 }
 
 /**
+ * Creates a new 2D array filled with zeros.
+ *
+ * @param width Width of the array
+ * @param height Height of the array
+ * @returns A new 2D array of the specified dimensions
+ */
+function createEmptyArray2D(width: number, height: number): number[][] {
+  return Array(height)
+    .fill(0)
+    .map(() => Array(width).fill(0));
+}
+
+/**
+ * Performs bilinear interpolation on a 2D field at a given position.
+ * Used in the semi-Lagrangian advection scheme.
+ *
+ * @param field The 2D field to interpolate
+ * @param x X-coordinate (can be fractional)
+ * @param y Y-coordinate (can be fractional)
+ * @param width Width of the field
+ * @param height Height of the field
+ * @returns Interpolated value at the specified position
+ */
+function bilinearInterpolate(
+  field: number[][],
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): number {
+  // Clamp coordinates to valid range
+  const clampedX = Math.max(0.5, Math.min(width - 1.5, x));
+  const clampedY = Math.max(0.5, Math.min(height - 1.5, y));
+
+  // Get integer and fractional parts
+  const x0 = Math.floor(clampedX);
+  const y0 = Math.floor(clampedY);
+  const x1 = x0 + 1;
+  const y1 = y0 + 1;
+
+  const sx = clampedX - x0;
+  const sy = clampedY - y0;
+
+  // Perform bilinear interpolation
+  const val00 = field[y0][x0];
+  const val10 = field[y0][x1];
+  const val01 = field[y1][x0];
+  const val11 = field[y1][x1];
+
+  const val0 = val00 * (1 - sx) + val10 * sx;
+  const val1 = val01 * (1 - sx) + val11 * sx;
+
+  return val0 * (1 - sy) + val1 * sy;
+}
+
+/**
  * Configuration options for the simulation solver.
  */
 export interface SimulationConfig {
@@ -128,6 +184,15 @@ export interface SimulationConfig {
 
   /** How strongly the velocity field is affected by pressure gradients */
   pressureImpact: number;
+
+  /** Time step size for advection (typically 0.1 to 1.0) */
+  timeStep: number;
+
+  /** Fluid viscosity coefficient (0.001 to 0.1) */
+  viscosity: number;
+
+  /** Number of iterations to run to approach steady state */
+  iterations: number;
 }
 
 /**
@@ -136,6 +201,9 @@ export interface SimulationConfig {
 export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   relaxationFactor: 0.2,
   pressureImpact: 0.1,
+  timeStep: 0.1,
+  viscosity: 0.01,
+  iterations: 20,
 };
 
 /**
@@ -151,14 +219,20 @@ export function runSimulationStep(
   forces: ForceVector[],
   config: SimulationConfig = DEFAULT_SIMULATION_CONFIG
 ): SimulationGrid {
-  const { width, height, isObstacle } = grid;
-  const { relaxationFactor, pressureImpact } = config;
+  // Extract configuration parameters
+  const { relaxationFactor, pressureImpact, timeStep, viscosity } = config;
 
   // Create a new grid for the updated values
   const newGrid = copySimulationGrid(grid);
 
   // Apply forces to the velocity field
   applyForces(newGrid, forces);
+
+  // Apply advection effects
+  applyAdvection(newGrid, timeStep);
+
+  // Apply viscosity effects
+  applyViscosity(newGrid, viscosity);
 
   // Update pressure based on velocity divergence
   updatePressure(newGrid, relaxationFactor);
@@ -250,6 +324,85 @@ function updateVelocity(grid: SimulationGrid, pressureImpact: number): void {
 }
 
 /**
+ * Applies advection effects to the velocity field.
+ * Uses semi-Lagrangian backtracing for stability.
+ *
+ * @param grid Grid to modify
+ * @param timeStep Time step size for advection
+ */
+function applyAdvection(grid: SimulationGrid, timeStep: number): void {
+  const { width, height, u, v, isObstacle } = grid;
+  const uNew = createEmptyArray2D(width, height);
+  const vNew = createEmptyArray2D(width, height);
+
+  // For each grid cell
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (!isObstacle[y][x]) {
+        // Find position where particle came from (backtrace)
+        const srcX = x - u[y][x] * timeStep;
+        const srcY = y - v[y][x] * timeStep;
+
+        // Interpolate velocity at source position
+        uNew[y][x] = bilinearInterpolate(u, srcX, srcY, width, height);
+        vNew[y][x] = bilinearInterpolate(v, srcX, srcY, width, height);
+      }
+    }
+  }
+
+  // Update grid with new advected values
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (!isObstacle[y][x]) {
+        u[y][x] = uNew[y][x];
+        v[y][x] = vNew[y][x];
+      }
+    }
+  }
+}
+
+/**
+ * Applies viscosity effects to the velocity field.
+ * Implements diffusion of momentum.
+ *
+ * @param grid Grid to modify
+ * @param viscosity Viscosity coefficient
+ */
+function applyViscosity(grid: SimulationGrid, viscosity: number): void {
+  const { width, height, u, v, isObstacle } = grid;
+
+  // Skip if viscosity is negligible
+  if (viscosity < 0.000001) return;
+
+  const uNew = createEmptyArray2D(width, height);
+  const vNew = createEmptyArray2D(width, height);
+
+  // For each interior grid cell
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (!isObstacle[y][x]) {
+        // Apply viscous diffusion using central differences (discretized Laplacian)
+        const laplacianU = u[y][x + 1] + u[y][x - 1] + u[y + 1][x] + u[y - 1][x] - 4 * u[y][x];
+        const laplacianV = v[y][x + 1] + v[y][x - 1] + v[y + 1][x] + v[y - 1][x] - 4 * v[y][x];
+
+        uNew[y][x] = u[y][x] + viscosity * laplacianU;
+        vNew[y][x] = v[y][x] + viscosity * laplacianV;
+      }
+    }
+  }
+
+  // Update grid with new viscosity-affected values
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (!isObstacle[y][x]) {
+        u[y][x] = uNew[y][x];
+        v[y][x] = vNew[y][x];
+      }
+    }
+  }
+}
+
+/**
  * Applies boundary conditions to the velocity field.
  * Sets zero velocity at obstacles and grid boundaries.
  *
@@ -268,4 +421,27 @@ function applyBoundaryConditions(grid: SimulationGrid): void {
       }
     }
   }
+}
+
+/**
+ * Runs multiple iterations of the simulation to approach a steady state.
+ *
+ * @param grid Initial state of the simulation
+ * @param forces Array of force vectors to apply
+ * @param config Configuration options for the simulation
+ * @returns A new grid with the simulation evolved toward steady state
+ */
+export function runSteadyStateSimulation(
+  grid: SimulationGrid,
+  forces: ForceVector[],
+  config: SimulationConfig = DEFAULT_SIMULATION_CONFIG
+): SimulationGrid {
+  let currentGrid = copySimulationGrid(grid);
+
+  // Run the specified number of iterations
+  for (let i = 0; i < config.iterations; i++) {
+    currentGrid = runSimulationStep(currentGrid, forces, config);
+  }
+
+  return currentGrid;
 }

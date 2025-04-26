@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-04-27
+
+- Implemented enhanced fluid simulation with advection and viscosity effects
+- Added semi-Lagrangian advection for stable fluid momentum transport
+- Added viscous diffusion to simulate different fluid viscosities
+- Created a comprehensive mathematical documentation in docs/math.md
+- Added new simulation parameters: timeStep, viscosity, and iterations
+- Implemented runSteadyStateSimulation function for approaching steady state
+- Added bilinear interpolation for smooth advection effects
+- Expanded test coverage for new simulation features
+
 ## [0.4.0] - 2025-04-26
 
 - Fixed image processing to support black and white images in addition to transparent PNGs.

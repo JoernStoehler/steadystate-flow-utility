@@ -5,6 +5,7 @@ import {
   createGridFromMask,
   copySimulationGrid,
   runSimulationStep,
+  runSteadyStateSimulation,
 } from './simulation';
 import type { SimulationGrid, ForceVector, SimulationConfig } from './simulation';
 
@@ -123,6 +124,9 @@ describe('Simulation utilities', () => {
       const testConfig: SimulationConfig = {
         relaxationFactor: 0, // Disable pressure updates for this test
         pressureImpact: 0, // Disable velocity updates from pressure
+        timeStep: 0, // Disable advection for this test
+        viscosity: 0, // Disable viscosity for this test
+        iterations: 1, // Just one iteration for tests
       };
 
       const result = runSimulationStep(grid, forces, testConfig);
@@ -212,12 +216,41 @@ describe('Simulation utilities', () => {
       const testConfig: SimulationConfig = {
         relaxationFactor: 0.5,
         pressureImpact: 0, // Disable velocity updates from pressure for this test
+        timeStep: 0, // Disable advection for this test
+        viscosity: 0, // Disable viscosity for this test
+        iterations: 1, // Just one iteration for tests
       };
 
       const result = runSimulationStep(grid, [], testConfig);
 
       // Expect higher pressure at the center due to divergence
       expect(result.pressure[2][2]).not.toBe(0);
+    });
+  });
+
+  describe('runSteadyStateSimulation', () => {
+    it('runs multiple iterations to reach steady state', () => {
+      const grid = createSimulationGrid(5, 5);
+
+      // Set initial velocity
+      grid.u[2][2] = 1.0;
+
+      const testConfig: SimulationConfig = {
+        relaxationFactor: 0.2,
+        pressureImpact: 0.1,
+        timeStep: 0.1,
+        viscosity: 0.01,
+        iterations: 3, // Run 3 iterations for the test
+      };
+
+      const result = runSteadyStateSimulation(grid, [], testConfig);
+
+      // Should have evolved from initial state
+      expect(result).not.toEqual(grid);
+
+      // Verify that flow has diffused to neighboring cells due to viscosity
+      expect(result.u[2][1]).not.toBe(0);
+      expect(result.u[2][3]).not.toBe(0);
     });
   });
 });
