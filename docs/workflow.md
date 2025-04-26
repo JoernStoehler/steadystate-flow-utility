@@ -33,14 +33,14 @@ Husky enforces these checks before each commit:
 
 ### PR Requirements
 
-1. **Branch Naming**: Use `feature/descriptive-name` format
+1. **Branch Naming**: Use `feature/descriptive-name` or `fix/issue-description` format
 2. **Pre-submission Steps**:
    ```bash
-   npm run typecheck && npm run lint && npm run build
+   npm run typecheck && npm run lint && npm run test && npm run build
    ```
-3. **Documentation**: Update relevant docs and `changelog.md`
-4. **PR Description**: Include type of change, related issues, and testing steps
+3. **Documentation**: Update relevant docs and `changelog.md` if applicable
+4. **PR Description**: Include type of change, related issues (if any), and testing steps
 5. **Quality Checklist**:
    - Tests added/updated
-   - Documentation updated
-   - Both client and server rendering verified
+   - Documentation updated (if needed)
+   - Changes verified in the browser

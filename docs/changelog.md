@@ -2,12 +2,10 @@
 
 ## [Unreleased]
 
-- Improved documentation conciseness
-- Fixed minor TypeScript types
+-   Initial project setup for steady-state flow visualization.
 
-## [0.1.0] - 2025-04-25
+## [0.1.0] - 2025-04-26
 
-- Initial React Router v7 template with SSR
-- TailwindCSS integration
-- TypeScript strict mode
-- ESLint flat configuration
+-   Initialized project from template.
+-   Updated README and documentation for flow utility goals.
+-   Configured React, Vite, TypeScript, TailwindCSS, ESLint, Prettier.

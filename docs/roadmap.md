@@ -1,26 +1,26 @@
 # Roadmap
 
-## Current Status
+## Current Status (v0.1.0)
 
-Core template with React Router v7, TailwindCSS, and SSR ready for use.
+-   Basic project structure with React, Vite, TypeScript, and TailwindCSS.
+-   Initial documentation setup.
 
 ## Upcoming (v0.2.0)
 
-- Authentication flow with protected routes
-- Form validation patterns
-- Dark/light theme support
-- Loading state patterns
+-   Implement canvas rendering area.
+-   Add PNG drag-and-drop functionality for obstacle definition.
+-   Basic UI controls for image-to-mask conversion (resolution).
+-   Initial (simple) steady-state simulation logic.
 
-## Future Plans (v1.0.0)
+## Future Plans (v0.3.0+)
 
-- Nested routes with layouts
-- Data prefetching examples
-- SEO optimization patterns
-- Accessibility improvements
+-   Implement force vector placement and interaction.
+-   Display interpolated vector field on a sampling grid.
+-   UI controls for simulation parameters (boundary conditions, time scale).
+-   UI improvements and aesthetic refinements.
+-   Performance optimizations for simulation and rendering.
 
 ## Considered Features
 
-- State management integration (Zustand/Jotai)
-- i18n support
-- PWA capabilities
-- Testing examples (React Testing Library)
+-   More advanced simulation options (e.g., different numerical methods).
+-   Saving/loading configurations.
