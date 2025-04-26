@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run type checking
+npm run typecheck || exit 1
+
+# Run lint-staged (includes testing, linting, formatting)
+npx lint-staged
