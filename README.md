@@ -8,20 +8,20 @@ Visualize an aesthetically pleasing vector field flowing around an obstacle. The
 
 ## Features
 
--   **Obstacle Definition:** Drag and drop a PNG image to define the obstacle shape.
--   **Mask Configuration:** UI controls to convert the PNG into a binary mask (subsampling, supersampling).
--   **Vector Field Visualization:** Displays the calculated steady-state vector field, interpolated onto a customizable sampling grid.
--   **Force Interaction:** Add, remove, or modify force vectors (start point + direction) to influence the flow.
--   **Real-time Updates:** Automatically recalculates and updates the visualization upon parameter changes.
--   **Desktop Only:** Designed for desktop browsers.
+- **Obstacle Definition:** Drag and drop a PNG image to define the obstacle shape.
+- **Mask Configuration:** UI controls to convert the PNG into a binary mask (subsampling, supersampling).
+- **Vector Field Visualization:** Displays the calculated steady-state vector field, interpolated onto a customizable sampling grid.
+- **Force Interaction:** Add, remove, or modify force vectors (start point + direction) to influence the flow.
+- **Real-time Updates:** Automatically recalculates and updates the visualization upon parameter changes.
+- **Desktop Only:** Designed for desktop browsers.
 
 ## Tech Stack
 
--   React
--   TypeScript
--   TailwindCSS
--   Vite (Bundler)
--   Vitest (Testing)
+- React
+- TypeScript
+- TailwindCSS
+- Vite (Bundler)
+- Vitest (Testing)
 
 ## Getting Started
 
@@ -31,9 +31,9 @@ Visualize an aesthetically pleasing vector field flowing around an obstacle. The
 
 ## Commands
 
--   `npm run dev`: Start HMR development server.
--   `npm run build`: Build for production (outputs to `dist/`).
--   `npm run test`: Run tests (`--watch`, `--coverage` flags available).
--   `npm run lint`: Run ESLint (`lint:fix` to auto-fix).
--   `npm run format`: Run Prettier formatting.
--   `npm run typecheck`: Run TypeScript checks.
+- `npm run dev`: Start HMR development server.
+- `npm run build`: Build for production (outputs to `dist/`).
+- `npm run test`: Run tests (`--watch`, `--coverage` flags available).
+- `npm run lint`: Run ESLint (`lint:fix` to auto-fix).
+- `npm run format`: Run Prettier formatting.
+- `npm run typecheck`: Run TypeScript checks.

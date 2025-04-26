@@ -4,11 +4,11 @@ This documentation helps developers understand the project setup, conventions, a
 
 ## Quick Reference
 
--   [Project Structure](project.md) - Architecture, key files, and commands.
--   [Code Style](codestyle.md) - Project conventions and patterns.
--   [Workflow](workflow.md) - Commit and PR guidelines (standard practices assumed).
--   [Changelog](changelog.md) - Recent changes.
--   [Roadmap](roadmap.md) - High-level goals.
+- [Project Structure](project.md) - Architecture, key files, and commands.
+- [Code Style](codestyle.md) - Project conventions and patterns.
+- [Workflow](workflow.md) - Commit and PR guidelines (standard practices assumed).
+- [Changelog](changelog.md) - Recent changes.
+- [Roadmap](roadmap.md) - High-level goals.
 
 ## Project Goal
 
@@ -16,7 +16,7 @@ To create a simple, interactive, aesthetically focused visualization of a 2D ste
 
 ## Tech Stack Overview
 
--   React & TypeScript
--   TailwindCSS (Styling)
--   Vite (Build Tool)
--   Vitest (Testing)
+- React & TypeScript
+- TailwindCSS (Styling)
+- Vite (Build Tool)
+- Vitest (Testing)

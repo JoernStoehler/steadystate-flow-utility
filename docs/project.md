@@ -12,15 +12,15 @@ app/                # Application source
   assets/           # Static assets like images (if not in public/)
 ```
 
-*Note: The initial template structure (`routes/`, `server/`) might be simplified as the project evolves into a single-view application.*
+_Note: The initial template structure (`routes/`, `server/`) might be simplified as the project evolves into a single-view application._
 
 ## Key Configuration Files
 
--   `vite.config.ts` - Bundler config (React, TailwindCSS plugins).
--   `tailwind.config.js` - Styling customization.
--   `eslint.config.js` - ESLint flat config with React/TS rules.
--   `tsconfig.json` - TypeScript configuration.
--   `.env` - Environment variables (if needed, copy from `.env.example`).
+- `vite.config.ts` - Bundler config (React, TailwindCSS plugins).
+- `tailwind.config.js` - Styling customization.
+- `eslint.config.js` - ESLint flat config with React/TS rules.
+- `tsconfig.json` - TypeScript configuration.
+- `.env` - Environment variables (if needed, copy from `.env.example`).
 
 ## Commands
 
@@ -39,6 +39,6 @@ Deployment is handled via GitHub Actions, building the static site and deploying
 
 ## Testing & Quality Checks
 
--   Tests are colocated with implementation (e.g., `simulation.ts` and `simulation.test.ts`).
--   Pre-commit hooks enforce typechecking, linting, and formatting.
--   CI runs checks on PRs to main branch.
+- Tests are colocated with implementation (e.g., `simulation.ts` and `simulation.test.ts`).
+- Pre-commit hooks enforce typechecking, linting, and formatting.
+- CI runs checks on PRs to main branch.
