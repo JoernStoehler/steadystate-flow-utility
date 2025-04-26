@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 
+import ForceVectorTable from '../components/force-vector-table';
 import VisualizationCanvas from '../components/visualization-canvas';
 import { pngToMask } from '../utils/image-processing';
+import { createGridFromMask, runSimulationStep } from '../utils/simulation';
+import type { ForceVector } from '../utils/simulation';
 
 import type { Route } from './+types/home';
 
@@ -14,13 +17,6 @@ interface SimulationGridConfig {
 interface VelocityField {
   u: number[][];
   v: number[][];
-}
-
-interface ForceVector {
-  x: number;
-  y: number;
-  fx: number;
-  fy: number;
 }
 
 interface DisplaySettings {
@@ -49,11 +45,9 @@ export default function Home() {
   const [obstacleImageData, setObstacleImageData] = useState<ImageData | null>(null);
   const [obstacleMask, setObstacleMask] = useState<boolean[][] | null>(null);
 
-  // These will be used in future phases for flow simulation
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [velocityField, setVelocityField] = useState<VelocityField | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [forceVectors, setForceVectors] = useState<ForceVector[]>([]);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>({
     showMask: false,
@@ -73,6 +67,41 @@ export default function Home() {
     }
   }, [obstacleImageData, simulationGridConfig.width, simulationGridConfig.height]);
 
+  // Run the simulation when obstacle mask changes
+  useEffect(() => {
+    if (!obstacleMask) return;
+
+    // Start simulation
+    setIsSimulating(true);
+
+    // Create simulation grid from mask
+    const grid = createGridFromMask(obstacleMask);
+
+    // Run simulation steps to reach steady state (use setTimeout to avoid blocking UI)
+    const runSimulation = async () => {
+      let currentGrid = grid;
+
+      // Run multiple iterations to approach steady state
+      for (let i = 0; i < 100; i++) {
+        // Use setTimeout to allow UI updates between steps
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // Run a simulation step
+        currentGrid = runSimulationStep(currentGrid, forceVectors);
+      }
+
+      // Update velocity field with the results
+      setVelocityField({
+        u: currentGrid.u,
+        v: currentGrid.v,
+      });
+
+      setIsSimulating(false);
+    };
+
+    runSimulation();
+  }, [obstacleMask, forceVectors]);
+
   return (
     <main className="min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-4">Steady-State Flow Utility</h1>
@@ -85,6 +114,13 @@ export default function Home() {
               onImageLoad={imageData => setObstacleImageData(imageData)}
               obstacleMask={obstacleMask}
               showMask={displaySettings.showMask}
+              velocityField={velocityField}
+              vectorScale={displaySettings.vectorScale}
+              displayGridDensity={displaySettings.displayGridDensity}
+              onAddForce={force => {
+                // Add the new force to the existing forces
+                setForceVectors(currentForces => [...currentForces, force]);
+              }}
             />
           </div>
         </div>
@@ -185,10 +221,40 @@ export default function Home() {
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="grid-density" className="block mb-1">
+                  Display Grid Density:
+                </label>
+                <div className="flex items-center">
+                  <input
+                    id="grid-density"
+                    type="range"
+                    min="4"
+                    max="32"
+                    step="4"
+                    value={displaySettings.displayGridDensity}
+                    onChange={e =>
+                      setDisplaySettings({
+                        ...displaySettings,
+                        displayGridDensity: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                  <span className="ml-2 w-8 text-right">{displaySettings.displayGridDensity}</span>
+                </div>
+              </div>
+
               <div className="mt-6">
                 <p className="font-medium">Status</p>
                 <div className="mt-1">
-                  {obstacleMask ? (
+                  {isSimulating ? (
+                    <p className="text-blue-600 dark:text-blue-400">Running simulation...</p>
+                  ) : velocityField ? (
+                    <p className="text-green-600 dark:text-green-400">
+                      Simulation complete - Flow field generated
+                    </p>
+                  ) : obstacleMask ? (
                     <p className="text-green-600 dark:text-green-400">
                       Obstacle mask generated ({obstacleMask.length} x{' '}
                       {obstacleMask[0]?.length || 0})
@@ -199,6 +265,40 @@ export default function Home() {
                     <p className="text-gray-500">No obstacle image loaded</p>
                   )}
                 </div>
+              </div>
+
+              <ForceVectorTable
+                forces={forceVectors}
+                onRemoveForce={index => {
+                  setForceVectors(currentForces => currentForces.filter((_, i) => i !== index));
+                }}
+                onClearForces={() => setForceVectors([])}
+              />
+
+              <div className="mt-6">
+                <button
+                  onClick={() => {
+                    // Run the simulation with current forces and mask
+                    if (obstacleMask && forceVectors.length > 0) {
+                      // Re-run the simulation effect by creating a new array instance
+                      // This triggers the useEffect that depends on forceVectors
+                      setForceVectors([...forceVectors]);
+                    }
+                  }}
+                  disabled={!obstacleMask || isSimulating || forceVectors.length === 0}
+                  className={`px-4 py-2 rounded-md font-medium ${
+                    !obstacleMask || isSimulating || forceVectors.length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {isSimulating ? 'Simulating...' : 'Run Simulation'}
+                </button>
+                <p className="text-xs text-gray-500 mt-1">
+                  {forceVectors.length === 0
+                    ? 'Add force vectors by clicking and dragging on the canvas'
+                    : `${forceVectors.length} force vector(s) added`}
+                </p>
               </div>
             </div>
           </div>
