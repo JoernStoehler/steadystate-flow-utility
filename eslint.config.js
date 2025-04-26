@@ -15,6 +15,8 @@ export default [
       'node_modules/**',
       '.react-router/**',
       '.react-router/types/**',
+      'coverage/**',
+      'dist/**',
       'eslint.config.js',
     ],
   },
