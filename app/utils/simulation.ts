@@ -7,39 +7,66 @@
  */
 export interface SimulationGrid {
   /** Width of the simulation grid */
-  width: number;
+  width: number; // grid units
 
   /** Height of the simulation grid */
-  height: number;
+  height: number; // grid units
 
   /** 2D array of pressure values at each grid cell */
   pressure: number[][];
 
   /** 2D array of horizontal velocity components */
-  u: number[][];
+  u: number[][]; // grid units
 
   /** 2D array of vertical velocity components */
-  v: number[][];
+  v: number[][]; // grid units
 
   /** 2D array indicating obstacle cells (true = cell is an obstacle) */
   isObstacle: boolean[][];
 }
+
+/*
+ * Unit systems:
+ * - Grid: (0 - SimulationGrid.width) and (0 - SimulationGrid.height)
+ * - Normalized: (0 - 1) for both x and y coordinates
+ * - Pixel: (0 - canvas.width) and (0 - canvas.height)
+ */
 
 /**
  * Represents a force vector applied to the flow at a specific position.
  */
 export interface ForceVector {
   /** X-coordinate of the force application point */
-  x: number;
+  x: number; // normalized units
 
   /** Y-coordinate of the force application point */
-  y: number;
+  y: number; // normalized units
 
   /** Horizontal component of the force */
-  fx: number;
+  fx: number; // normalized units
 
   /** Vertical component of the force */
-  fy: number;
+  fy: number; // normalized units
+}
+
+/**
+ * Represents a target velocity applied to the flow at a specific position.
+ */
+export interface TargetVelocity {
+  /** X-coordinate of the target velocity point */
+  x: number; // normalized units
+
+  /** Y-coordinate of the target velocity point */
+  y: number; // normalized units
+
+  /** Target horizontal velocity component */
+  u: number; // normalized units
+
+  /** Target vertical velocity component */
+  v: number; // normalized units
+
+  /** Mixing weight (0-1) controlling how strongly to enforce the target */
+  weight: number;
 }
 
 /**
@@ -117,6 +144,27 @@ export function copySimulationGrid(grid: SimulationGrid): SimulationGrid {
   }
 
   return newGrid;
+}
+
+/**
+ * Converts force vectors to target velocities for reusing the UI.
+ * This allows the force vector UI to control target velocities.
+ *
+ * @param forces Array of force vectors
+ * @param weight The mixing weight to use for all target velocities (0-1)
+ * @returns Array of target velocities
+ */
+export function convertForceVectorsToTargetVelocities(
+  forces: ForceVector[],
+  weight: number = 0.1
+): TargetVelocity[] {
+  return forces.map(force => ({
+    x: force.x,
+    y: force.y,
+    u: force.fx, // No need to scale here as scaling will happen in applyTargetVelocities
+    v: force.fy,
+    weight,
+  }));
 }
 
 /**
@@ -211,12 +259,14 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
  *
  * @param grid Current state of the simulation
  * @param forces Array of force vectors to apply
+ * @param targetVelocities Array of target velocities to apply (optional)
  * @param config Configuration options for the simulation
  * @returns A new grid with updated pressure and velocity
  */
 export function runSimulationStep(
   grid: SimulationGrid,
   forces: ForceVector[],
+  targetVelocities: TargetVelocity[] = [],
   config: SimulationConfig = DEFAULT_SIMULATION_CONFIG
 ): SimulationGrid {
   // Extract configuration parameters
@@ -240,6 +290,9 @@ export function runSimulationStep(
   // Update velocity based on pressure gradient
   updateVelocity(newGrid, pressureImpact);
 
+  // Apply target velocities with mixing weights
+  applyTargetVelocities(newGrid, targetVelocities);
+
   // Apply boundary conditions
   applyBoundaryConditions(newGrid);
 
@@ -257,7 +310,7 @@ function applyForces(grid: SimulationGrid, forces: ForceVector[]): void {
 
   // Apply each force to the velocity field
   for (const force of forces) {
-    // Convert from canvas coordinates to grid indices
+    // Convert from normalized coordinates (0-1) to grid indices
     const gx = Math.floor(force.x * width);
     const gy = Math.floor(force.y * height);
 
@@ -266,9 +319,13 @@ function applyForces(grid: SimulationGrid, forces: ForceVector[]): void {
       continue;
     }
 
-    // Add the force components to the velocity
-    u[gy][gx] += force.fx;
-    v[gy][gx] += force.fy;
+    // Convert force components from normalized to grid units
+    const scaledFx = force.fx * width;
+    const scaledFy = force.fy * height;
+
+    // Add the scaled force components to the velocity
+    u[gy][gx] += scaledFx;
+    v[gy][gx] += scaledFy;
   }
 }
 
@@ -424,23 +481,55 @@ function applyBoundaryConditions(grid: SimulationGrid): void {
 }
 
 /**
+ * Applies target velocities to the flow field using linear mixing.
+ * This creates "soft" constraints that guide the flow toward the target values.
+ *
+ * @param grid Grid to modify
+ * @param targetVelocities Array of target velocities to apply
+ */
+function applyTargetVelocities(grid: SimulationGrid, targetVelocities: TargetVelocity[]): void {
+  const { width, height, u, v, isObstacle } = grid;
+
+  for (const target of targetVelocities) {
+    // Convert from normalized coordinates (0-1) to grid indices
+    const gx = Math.floor(target.x * width);
+    const gy = Math.floor(target.y * height);
+
+    // Skip if position is outside grid bounds or is an obstacle
+    if (gx < 1 || gx >= width - 1 || gy < 1 || gy >= height - 1 || isObstacle[gy][gx]) {
+      continue;
+    }
+
+    // Convert target velocity from normalized to grid units
+    const scaledU = target.u * width;
+    const scaledV = target.v * height;
+
+    // Apply linear mixing between current velocity and scaled target velocity
+    u[gy][gx] = (1 - target.weight) * u[gy][gx] + target.weight * scaledU;
+    v[gy][gx] = (1 - target.weight) * v[gy][gx] + target.weight * scaledV;
+  }
+}
+
+/**
  * Runs multiple iterations of the simulation to approach a steady state.
  *
  * @param grid Initial state of the simulation
  * @param forces Array of force vectors to apply
+ * @param targetVelocities Array of target velocities to apply (optional)
  * @param config Configuration options for the simulation
  * @returns A new grid with the simulation evolved toward steady state
  */
 export function runSteadyStateSimulation(
   grid: SimulationGrid,
   forces: ForceVector[],
+  targetVelocities: TargetVelocity[] = [],
   config: SimulationConfig = DEFAULT_SIMULATION_CONFIG
 ): SimulationGrid {
   let currentGrid = copySimulationGrid(grid);
 
   // Run the specified number of iterations
   for (let i = 0; i < config.iterations; i++) {
-    currentGrid = runSimulationStep(currentGrid, forces, config);
+    currentGrid = runSimulationStep(currentGrid, forces, targetVelocities, config);
   }
 
   return currentGrid;

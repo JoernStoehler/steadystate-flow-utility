@@ -164,13 +164,15 @@ This roadmap outlines the development steps for the Steady-State Flow Utility. T
   _(various: Tailwind in components/routes)_
 
   - ✅ Styling, labels, instructions, loaders
-  - 🛠️ Final UX tweaks
+  - ✅ Final UX tweaks
+  - ✅ Bug fixes (simulation loop issues)
 
-- ⬜ **Task 6.2: Testing**  
+- 🛠️ **Task 6.2: Testing**  
   _(files: React Testing Library suites + `npm test`)_
 
   - ⬜ RTL tests for interactions
-  - 🛠️ Unit tests for utils
+  - ✅ Unit tests for utils
+  - 🛠️ Fixing test failures after refactoring
   - ⬜ Coverage run
 
 - ⬜ **Task 6.3: Performance**  

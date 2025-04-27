@@ -86,7 +86,7 @@ export function drawImage(
  * Draws velocity field vectors on the canvas
  *
  * @param ctx Canvas rendering context
- * @param velocityField Velocity field with u and v components
+ * @param velocityField Velocity field with u and v components, grid units
  * @param displayGridDensity Spacing between displayed vectors
  * @param canvasWidth Width of the canvas
  * @param canvasHeight Height of the canvas
@@ -128,11 +128,20 @@ export function drawVelocityField(
       const startX = x * cellWidth + cellWidth / 2;
       const startY = y * cellHeight + cellHeight / 2;
 
+      // Descale velocity values back from grid units to normalized units for consistent visual representation
+      const normalizedUVal = uVal * fieldWidth;
+      const normalizedVVal = vVal * fieldHeight;
+      const normalizedMagnitude = Math.sqrt(
+        normalizedUVal * normalizedUVal + normalizedVVal * normalizedVVal
+      );
+
+      if (normalizedMagnitude < 0.00001) continue; // Skip extremely small vectors after normalization
+
       // Calculate the vector endpoint with scaling
       // Use a stronger scaling factor to make the flow visualization more visible
-      const vectorLength = Math.min(30, magnitude * 80) * vectorScale;
-      const endX = startX + (uVal / magnitude) * vectorLength;
-      const endY = startY + (vVal / magnitude) * vectorLength;
+      const vectorLength = Math.min(30, normalizedMagnitude * 80 * fieldWidth) * vectorScale;
+      const endX = startX + (normalizedUVal / normalizedMagnitude) * vectorLength;
+      const endY = startY + (normalizedVVal / normalizedMagnitude) * vectorLength;
 
       // Draw the line
       ctx.beginPath();
@@ -142,7 +151,7 @@ export function drawVelocityField(
 
       // Draw an arrowhead
       const arrowSize = 3;
-      const angle = Math.atan2(vVal, uVal);
+      const angle = Math.atan2(normalizedVVal, normalizedUVal); // Use normalized values for consistent angle
 
       ctx.beginPath();
       ctx.moveTo(endX, endY);

@@ -6,8 +6,9 @@ import {
   copySimulationGrid,
   runSimulationStep,
   runSteadyStateSimulation,
+  convertForceVectorsToTargetVelocities,
 } from './simulation';
-import type { SimulationGrid, ForceVector, SimulationConfig } from './simulation';
+import type { SimulationGrid, ForceVector, TargetVelocity, SimulationConfig } from './simulation';
 
 describe('Simulation utilities', () => {
   describe('createSimulationGrid', () => {
@@ -129,14 +130,15 @@ describe('Simulation utilities', () => {
         iterations: 1, // Just one iteration for tests
       };
 
-      const result = runSimulationStep(grid, forces, testConfig);
+      const result = runSimulationStep(grid, forces, [], testConfig);
 
       // Check that force was applied at the center (scaled to grid coordinates)
       const centerX = Math.floor(0.5 * 5);
       const centerY = Math.floor(0.5 * 5);
 
-      expect(result.u[centerY][centerX]).toBe(1.0);
-      expect(result.v[centerY][centerX]).toBe(0.5);
+      // Force components should now be scaled by grid width/height
+      expect(result.u[centerY][centerX]).toBe(1.0 * 5); // fx * width
+      expect(result.v[centerY][centerX]).toBe(0.5 * 5); // fy * height
     });
 
     it('enforces zero velocity at obstacle cells', () => {
@@ -160,7 +162,7 @@ describe('Simulation utilities', () => {
       }
 
       // Run a simulation step
-      const result = runSimulationStep(grid, []);
+      const result = runSimulationStep(grid, [], []);
 
       // Check that velocity is zero at the obstacle
       expect(result.u[2][2]).toBe(0);
@@ -179,7 +181,7 @@ describe('Simulation utilities', () => {
       }
 
       // Run a simulation step
-      const result = runSimulationStep(grid, []);
+      const result = runSimulationStep(grid, [], []);
 
       // Check boundaries (top edge)
       for (let x = 0; x < grid.width; x++) {
@@ -221,7 +223,7 @@ describe('Simulation utilities', () => {
         iterations: 1, // Just one iteration for tests
       };
 
-      const result = runSimulationStep(grid, [], testConfig);
+      const result = runSimulationStep(grid, [], [], testConfig);
 
       // Expect higher pressure at the center due to divergence
       expect(result.pressure[2][2]).not.toBe(0);
@@ -243,7 +245,7 @@ describe('Simulation utilities', () => {
         iterations: 3, // Run 3 iterations for the test
       };
 
-      const result = runSteadyStateSimulation(grid, [], testConfig);
+      const result = runSteadyStateSimulation(grid, [], [], testConfig);
 
       // Should have evolved from initial state
       expect(result).not.toEqual(grid);
@@ -251,6 +253,106 @@ describe('Simulation utilities', () => {
       // Verify that flow has diffused to neighboring cells due to viscosity
       expect(result.u[2][1]).not.toBe(0);
       expect(result.u[2][3]).not.toBe(0);
+    });
+  });
+
+  describe('Target velocities', () => {
+    it('applies target velocities with mixing weight', () => {
+      const grid = createSimulationGrid(5, 5);
+
+      // Create target velocities
+      const targetVelocities: TargetVelocity[] = [
+        { x: 0.5, y: 0.5, u: 2.0, v: 1.0, weight: 0.5 }, // Apply at center with 50% weight
+      ];
+
+      const testConfig: SimulationConfig = {
+        relaxationFactor: 0, // Disable pressure updates for this test
+        pressureImpact: 0, // Disable velocity updates from pressure
+        timeStep: 0, // Disable advection for this test
+        viscosity: 0, // Disable viscosity for this test
+        iterations: 1, // Just one iteration for tests
+      };
+
+      // Run a single step with target velocities
+      const result = runSimulationStep(grid, [], targetVelocities, testConfig);
+
+      // Check that target velocity was applied at the center with 50% weight
+      const centerX = Math.floor(0.5 * 5);
+      const centerY = Math.floor(0.5 * 5);
+
+      expect(result.u[centerY][centerX]).toBeCloseTo(1.0); // 50% of 2.0
+      expect(result.v[centerY][centerX]).toBeCloseTo(0.5); // 50% of 1.0
+    });
+
+    it('converts force vectors to target velocities', () => {
+      const forces: ForceVector[] = [{ x: 0.3, y: 0.4, fx: 1.0, fy: 2.0 }];
+
+      // Convert with default weight (0.1)
+      const targets = convertForceVectorsToTargetVelocities(forces);
+
+      expect(targets.length).toBe(1);
+      expect(targets[0].x).toBe(0.3);
+      expect(targets[0].y).toBe(0.4);
+      expect(targets[0].u).toBe(1.0);
+      expect(targets[0].v).toBe(2.0);
+      expect(targets[0].weight).toBe(0.1);
+
+      // Convert with custom weight
+      const customTargets = convertForceVectorsToTargetVelocities(forces, 0.5);
+      expect(customTargets[0].weight).toBe(0.5);
+    });
+
+    it('preserves previous velocity values when using weight < 1.0', () => {
+      const grid = createSimulationGrid(5, 5);
+
+      // Set initial velocity
+      grid.u[2][2] = 1.0;
+      grid.v[2][2] = 1.0;
+
+      // Create target velocities with 30% weight
+      const targetVelocities: TargetVelocity[] = [{ x: 0.5, y: 0.5, u: 2.0, v: 0.0, weight: 0.3 }];
+
+      const testConfig: SimulationConfig = {
+        relaxationFactor: 0,
+        pressureImpact: 0,
+        timeStep: 0,
+        viscosity: 0,
+        iterations: 1,
+      };
+
+      // Run a single step with target velocities
+      const result = runSimulationStep(grid, [], targetVelocities, testConfig);
+
+      // Check that target velocity was mixed with existing velocity
+      // u = (1-0.3)*1.0 + 0.3*2.0 = 0.7 + 0.6 = 1.3
+      // v = (1-0.3)*1.0 + 0.3*0.0 = 0.7 + 0.0 = 0.7
+      expect(result.u[2][2]).toBeCloseTo(1.3);
+      expect(result.v[2][2]).toBeCloseTo(0.7);
+    });
+
+    it('properly scales target velocities to grid dimensions', () => {
+      const grid = createSimulationGrid(10, 8);
+      const targetVelocities: TargetVelocity[] = [
+        { x: 0.4, y: 0.5, u: 0.2, v: 0.3, weight: 1.0 }, // Full weight for easy testing
+      ];
+
+      const testConfig: SimulationConfig = {
+        relaxationFactor: 0,
+        pressureImpact: 0,
+        timeStep: 0,
+        viscosity: 0,
+        iterations: 1,
+      };
+
+      const result = runSimulationStep(grid, [], targetVelocities, testConfig);
+
+      // Calculate grid position
+      const gx = Math.floor(0.4 * 10);
+      const gy = Math.floor(0.5 * 8);
+
+      // Verify target velocity was scaled by grid dimensions and fully applied (weight=1.0)
+      expect(result.u[gy][gx]).toBe(0.2 * 10); // target.u * width
+      expect(result.v[gy][gx]).toBe(0.3 * 8); // target.v * height
     });
   });
 });

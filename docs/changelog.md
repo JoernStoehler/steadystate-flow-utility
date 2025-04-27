@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Fixed simulation loop getting stuck at step 0 after adding an image
+- Fixed "Maximum update depth exceeded" error by refactoring the abortController dependency in useSimulation hook
+- Improved simulation stability by using useRef for abort controller instead of state
+
 ## [0.5.0] - 2025-04-27
 
 - Implemented enhanced fluid simulation with advection and viscosity effects

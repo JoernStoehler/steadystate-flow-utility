@@ -163,7 +163,11 @@ u[y][x] -= pressureImpact * dpdx;
 v[y][x] -= pressureImpact * dpdy;
 ```
 
-### 6. External Forces
+### 6. External Forces and Target Velocities
+
+The simulation now supports two mechanisms for controlling the fluid flow:
+
+#### 6.1 Force Vectors
 
 External forces ($\vec{F}$) are represented as vectors that directly impact the velocity field:
 
@@ -186,6 +190,38 @@ Forces are applied by directly modifying the velocity components:
 u[gy][gx] += force.fx;
 v[gy][gx] += force.fy;
 ```
+
+#### 6.2 Target Velocities
+
+Target velocities provide a mechanism to specify desired flow velocities at specific points:
+
+```typescript
+export interface TargetVelocity {
+  x: number; // position (normalized 0-1)
+  y: number; // position (normalized 0-1)
+  u: number; // target x-velocity component
+  v: number; // target y-velocity component
+  weight: number; // mixing weight (0-1)
+}
+```
+
+Target velocities are applied using linear mixing with a weight factor:
+
+$$u_{i,j}^{new} = (1 - w) \times u_{i,j}^{old} + w \times u_{i,j}^{target}$$
+$$v_{i,j}^{new} = (1 - w) \times v_{i,j}^{old} + w \times v_{i,j}^{target}$$
+
+This creates a "soft" constraint that gradually guides the flow toward the target values without forcing an exact match:
+
+```typescript
+u[gy][gx] = (1 - target.weight) * u[gy][gx] + target.weight * target.u;
+v[gy][gx] = (1 - target.weight) * v[gy][gx] + target.weight * target.v;
+```
+
+The weight parameter controls the strength of the constraint, allowing for flexible control:
+
+- `weight = 1.0`: Hard constraint (velocity exactly matches target)
+- `weight = 0.5`: Equal influence of target and underlying flow
+- `weight = 0.1`: Subtle influence of target on the natural flow pattern
 
 ## Boundary Conditions
 
@@ -223,6 +259,7 @@ This sequence is implemented in `runSimulationStep`:
 export function runSimulationStep(
   grid: SimulationGrid,
   forces: ForceVector[],
+  targetVelocities: TargetVelocity[] = [],
   config: SimulationConfig = DEFAULT_SIMULATION_CONFIG
 ): SimulationGrid {
   // Create a new grid for the updated values
@@ -242,6 +279,9 @@ export function runSimulationStep(
 
   // Update velocity based on pressure gradient
   updateVelocity(newGrid, config.pressureImpact);
+
+  // Apply target velocities with mixing weights
+  applyTargetVelocities(newGrid, targetVelocities);
 
   // Apply boundary conditions
   applyBoundaryConditions(newGrid);
@@ -344,6 +384,31 @@ function applyViscosity(grid: SimulationGrid, viscosity: number): void {
 }
 ```
 
+### Target Velocity Implementation
+
+The target velocity step applies soft constraints using linear mixing:
+
+```typescript
+function applyTargetVelocities(grid: SimulationGrid, targetVelocities: TargetVelocity[]): void {
+  const { width, height, u, v, isObstacle } = grid;
+
+  for (const target of targetVelocities) {
+    // Convert normalized position (0-1) to grid coordinates
+    const gx = Math.round(target.x * (width - 1));
+    const gy = Math.round(target.y * (height - 1));
+
+    // Skip if position is outside grid bounds or is an obstacle
+    if (gx < 1 || gx >= width - 1 || gy < 1 || gy >= height - 1 || isObstacle[gy][gx]) {
+      continue;
+    }
+
+    // Apply linear mixing between current velocity and target velocity
+    u[gy][gx] = (1 - target.weight) * u[gy][gx] + target.weight * target.u;
+    v[gy][gx] = (1 - target.weight) * v[gy][gx] + target.weight * target.v;
+  }
+}
+```
+
 ## Remaining Simplifications
 
 While our enhanced simulation now includes advection and viscosity, it still employs some simplifications:
@@ -354,12 +419,13 @@ While our enhanced simulation now includes advection and viscosity, it still emp
 
 ## Aesthetic Considerations
 
-The inclusion of advection and viscosity significantly enhances the visual quality and physical realism of the simulation:
+The inclusion of advection, viscosity, and target velocities significantly enhances the visual quality and physical realism of the simulation:
 
 1. **Vortex Shedding**: With advection included, the simulation can capture the beautiful von Kármán vortex streets that form downstream of obstacles
 2. **Flow Separation**: The simulation can now exhibit flow separation effects at obstacle boundaries
 3. **Reynolds Number Control**: By adjusting the viscosity parameter, different flow regimes from laminar to turbulent can be simulated
 4. **Steady-State Beauty**: After running sufficient iterations, the flow stabilizes into aesthetically pleasing patterns around obstacles
+5. **Flow Artistry**: Target velocities allow for artistic control of flow patterns while maintaining physical plausibility
 
 ### Visually Important Parameters
 
@@ -367,16 +433,19 @@ For creating the most visually stunning flows:
 
 - **Viscosity**: Lower values (0.01-0.001) create more dynamic vortices while higher values (0.1-0.5) produce smoother, more laminar flows
 - **Forces**: Strategic placement of forces can create artistic flow patterns
+- **Target Velocities**: Create precise flow features like vortices and streams in specific locations
+- **Mixing Weights**: Lower weight values (0.05-0.2) for target velocities preserve natural flow characteristics while guiding the overall pattern
 - **Obstacle Shape**: Complex obstacle shapes create more intricate and beautiful flow patterns
 
 ## Conclusion
 
-The enhanced simulation now provides a physically informed approximation of incompressible fluid flow with advection and viscosity effects. The core mathematics focuses on:
+The enhanced simulation now provides a physically informed approximation of incompressible fluid flow with advection, viscosity, and target velocity effects. The core mathematics focuses on:
 
 1. Maintaining the incompressibility condition ($\nabla \cdot \vec{v} = 0$)
 2. Modeling momentum transport through advection ($(\vec{v} \cdot \nabla)\vec{v}$)
 3. Incorporating viscous diffusion ($\nu \nabla^2 \vec{v}$)
 4. Relating pressure and velocity through the pressure Poisson equation
 5. Enforcing appropriate boundary conditions at obstacles
+6. Providing artistic control through both force vectors and soft target velocity constraints
 
-These mathematical principles are efficiently implemented in TypeScript, creating a balance between physical accuracy and computational performance ideally suited for creating beautiful, interactive flow visualizations.
+These mathematical principles are efficiently implemented in TypeScript, creating a balance between physical accuracy, computational performance, and artistic control ideally suited for creating beautiful, interactive flow visualizations.
