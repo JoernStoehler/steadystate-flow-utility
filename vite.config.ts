@@ -22,4 +22,7 @@ export default defineConfig({
     include: ['**/*.{test,spec}.{ts,tsx}'],
   },
   base: process.env.NODE_ENV === 'production' ? '/steadystate-flow-utility/' : '/',
+  build: {
+    outDir: 'build',
+  },
 });

@@ -181,12 +181,12 @@ This roadmap outlines the development steps for the Steady-State Flow Utility. T
   - ⬜ Profile & optimize
   - ⬜ Consider Web Workers
 
-- 🛠️ **Task 6.4: Deployment**  
+- ✅ **Task 6.4: Deployment**  
   _(workflow: GitHub Actions, Pages)_
 
   - ✅ `npm run build` → verify deploy
-  - 🛠️ GitHub Actions workflow setup
-  - ⬜ Smoke-test live
+  - ✅ GitHub Actions workflow setup
+  - 🛠️ Smoke-test live
 
 - 🛠️ **Task 6.5: Documentation**  
   _(files: `README.md`, `docs/`)_

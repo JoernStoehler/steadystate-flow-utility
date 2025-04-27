@@ -2,7 +2,7 @@
   "name": "steadystate-flow-utility",
   "private": true,
   "type": "module",
-  "homepage": "https://YOURUSERNAME.github.io/steadystate-flow-utility",
+  "homepage": "https://JoernStoehler.github.io/steadystate-flow-utility",
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
@@ -16,7 +16,7 @@
     "prepare": "husky",
     "postinstall": "npm run prepare",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d build"
   },
   "dependencies": {
     "@react-router/node": "^7.5.2",
@@ -45,6 +45,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^15.5.1",
