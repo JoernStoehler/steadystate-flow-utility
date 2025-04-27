@@ -1,7 +1,8 @@
 {
-  "name": "template-reactrouterv7-copilot",
+  "name": "steadystate-flow-utility",
   "private": true,
   "type": "module",
+  "homepage": "https://YOURUSERNAME.github.io/steadystate-flow-utility",
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
@@ -13,7 +14,9 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "prepare": "husky",
-    "postinstall": "npm run prepare"
+    "postinstall": "npm run prepare",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@react-router/node": "^7.5.2",

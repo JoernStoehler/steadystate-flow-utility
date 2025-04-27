@@ -21,4 +21,5 @@ export default defineConfig({
     setupFiles: './app/setupTests.ts',
     include: ['**/*.{test,spec}.{ts,tsx}'],
   },
+  base: process.env.NODE_ENV === 'production' ? '/steadystate-flow-utility/' : '/',
 });
