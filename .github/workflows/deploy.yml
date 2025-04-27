@@ -44,7 +44,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './build'
+          # Point to the client static output for GitHub Pages
+          path: './build/client'
 
   deploy:
     environment:

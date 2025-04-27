@@ -16,7 +16,7 @@
     "prepare": "husky",
     "postinstall": "npm run prepare",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build/client"
   },
   "dependencies": {
     "@react-router/node": "^7.5.2",
