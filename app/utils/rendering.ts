@@ -129,8 +129,8 @@ export function drawVelocityField(
       const startY = y * cellHeight + cellHeight / 2;
 
       // Descale velocity values back from grid units to normalized units for consistent visual representation
-      const normalizedUVal = uVal * fieldWidth;
-      const normalizedVVal = vVal * fieldHeight;
+      const normalizedUVal = uVal / fieldWidth;
+      const normalizedVVal = vVal / fieldHeight;
       const normalizedMagnitude = Math.sqrt(
         normalizedUVal * normalizedUVal + normalizedVVal * normalizedVVal
       );
@@ -139,9 +139,8 @@ export function drawVelocityField(
 
       // Calculate the vector endpoint with scaling
       // Use a stronger scaling factor to make the flow visualization more visible
-      const vectorLength = Math.min(30, normalizedMagnitude * 80 * fieldWidth) * vectorScale;
-      const endX = startX + (normalizedUVal / normalizedMagnitude) * vectorLength;
-      const endY = startY + (normalizedVVal / normalizedMagnitude) * vectorLength;
+      const endX = startX + normalizedUVal * canvasWidth * vectorScale;
+      const endY = startY + normalizedVVal * canvasHeight * vectorScale;
 
       // Draw the line
       ctx.beginPath();

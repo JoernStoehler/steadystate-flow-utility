@@ -262,7 +262,7 @@ describe('Simulation utilities', () => {
 
       // Create target velocities
       const targetVelocities: TargetVelocity[] = [
-        { x: 0.5, y: 0.5, u: 2.0, v: 1.0, weight: 0.5 }, // Apply at center with 50% weight
+        { x: 0.5, y: 0.5, u: 0.2, v: 0.2, weight: 0.5 }, // Apply at center with 50% weight
       ];
 
       const testConfig: SimulationConfig = {
@@ -280,8 +280,8 @@ describe('Simulation utilities', () => {
       const centerX = Math.floor(0.5 * 5);
       const centerY = Math.floor(0.5 * 5);
 
-      expect(result.u[centerY][centerX]).toBeCloseTo(1.0); // 50% of 2.0
-      expect(result.v[centerY][centerX]).toBeCloseTo(0.5); // 50% of 1.0
+      expect(result.u[centerY][centerX]).toBeCloseTo(0.5); // 50% of 1.0 (=0.2*5)
+      expect(result.v[centerY][centerX]).toBeCloseTo(0.5); // 50% of 1.0 (=0.2*5)
     });
 
     it('converts force vectors to target velocities', () => {
@@ -310,7 +310,7 @@ describe('Simulation utilities', () => {
       grid.v[2][2] = 1.0;
 
       // Create target velocities with 30% weight
-      const targetVelocities: TargetVelocity[] = [{ x: 0.5, y: 0.5, u: 2.0, v: 0.0, weight: 0.3 }];
+      const targetVelocities: TargetVelocity[] = [{ x: 0.5, y: 0.5, u: 0.2, v: 0.0, weight: 0.3 }];
 
       const testConfig: SimulationConfig = {
         relaxationFactor: 0,
@@ -324,9 +324,9 @@ describe('Simulation utilities', () => {
       const result = runSimulationStep(grid, [], targetVelocities, testConfig);
 
       // Check that target velocity was mixed with existing velocity
-      // u = (1-0.3)*1.0 + 0.3*2.0 = 0.7 + 0.6 = 1.3
-      // v = (1-0.3)*1.0 + 0.3*0.0 = 0.7 + 0.0 = 0.7
-      expect(result.u[2][2]).toBeCloseTo(1.3);
+      // u = (1-0.3)*1.0 + 0.3*(0.2*5) = 0.7 + 0.3 = 1.0
+      // v = (1-0.3)*1.0 + 0.3*(0.0*5) = 0.7 + 0.0 = 0.7
+      expect(result.u[2][2]).toBeCloseTo(1.0);
       expect(result.v[2][2]).toBeCloseTo(0.7);
     });
 
