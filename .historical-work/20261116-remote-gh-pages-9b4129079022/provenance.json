@@ -1,0 +1,123 @@
+{
+  "branch": "gh-pages",
+  "commit": "9b41290790229c736b3a6322625cda36b78cb593",
+  "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+  "status": "Historical published deployment artifact; active workflow/main deployment remains unchanged.",
+  "review_reason": "Pages API confirms workflow publication from main; gh-pages branch is unused by the configured publication source.",
+  "files": [
+    {
+      "path": ".editorconfig",
+      "captured_as": "files/.editorconfig",
+      "bytes": 409,
+      "sha256": "e9a5dce1c6cb41be9ee97987e4e639958d55ddfef374804ff7f3a504b6ecf5d7"
+    },
+    {
+      "path": ".env.example",
+      "captured_as": "files/.env.example",
+      "bytes": 364,
+      "sha256": "9690870e8cb9ffa426308197b910214f2ff58e4a587e9aeb4f8566da02299ecd"
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "captured_as": "files/.github/copilot-instructions.md",
+      "bytes": 1167,
+      "sha256": "b94ee55c8c0bf650bbfada1ba786abb51748b40e12f6f21d4437bcc0ab7ed46c"
+    },
+    {
+      "path": ".github/workflows/deploy.yml",
+      "captured_as": "files/.github/workflows/deploy.yml",
+      "bytes": 1205,
+      "sha256": "1e660ccbf1d77ec5e8174e54359cd514f76f5e92734bcb485b1a6107d31bde73"
+    },
+    {
+      "path": ".gitignore",
+      "captured_as": "files/.gitignore.inert",
+      "bytes": 305,
+      "sha256": "5c726fca82bdcfe6a30f607987c5d489c78ca4e3231e116753ac54f9eb32a018"
+    },
+    {
+      "path": ".husky/pre-commit",
+      "captured_as": "files/.husky/pre-commit",
+      "bytes": 165,
+      "sha256": "ba3499e1404046d90f41aea8484cc81d76b4b304ca27f5932a790afb0ff9df3e"
+    },
+    {
+      "path": ".lintstagedrc",
+      "captured_as": "files/.lintstagedrc",
+      "bytes": 132,
+      "sha256": "530998fbbc2a4c6df58a5819a8d070db8762198e2d0700f14f25da20cb70e82a"
+    },
+    {
+      "path": ".prettierrc",
+      "captured_as": "files/.prettierrc",
+      "bytes": 237,
+      "sha256": "ff49fd419c7c90e8e1f92b6eae679c50f6b1e1dce1329a164e1fad5bbb02deb8"
+    },
+    {
+      "path": ".vscode/extensions.json",
+      "captured_as": "files/.vscode/extensions.json",
+      "bytes": 301,
+      "sha256": "7415152d1ce9b8b09fab08d71e9e3bb8dc28c190576b398facff0115bf5a600b"
+    },
+    {
+      "path": ".vscode/settings.json",
+      "captured_as": "files/.vscode/settings.json",
+      "bytes": 794,
+      "sha256": "7441b41f55eb18cf55c3a942be054d47fc99938d79defe3709f4b41a5155659e"
+    },
+    {
+      "path": "assets/chunk-BAXFHI7N-CYWgGTUP.js",
+      "captured_as": "files/assets/chunk-BAXFHI7N-CYWgGTUP.js",
+      "bytes": 116269,
+      "sha256": "688e6352f50bc02f794d31ca9d95cd2febd0f7459374b76411c6edd575d851f4"
+    },
+    {
+      "path": "assets/entry.client-C-5UTcQY.js",
+      "captured_as": "files/assets/entry.client-C-5UTcQY.js",
+      "bytes": 181431,
+      "sha256": "d5e683abeb05eb2669602bd4e1bc7d12d7fd6cb1cfc0250a52c6b38af3c83275"
+    },
+    {
+      "path": "assets/home-BGSGw2gy.js",
+      "captured_as": "files/assets/home-BGSGw2gy.js",
+      "bytes": 21201,
+      "sha256": "0b9f43b8eb25f048814c3738f18c98182c32c63f996183412da7cf3fdab12186"
+    },
+    {
+      "path": "assets/manifest-dc5e042f.js",
+      "captured_as": "files/assets/manifest-dc5e042f.js",
+      "bytes": 1113,
+      "sha256": "d41017dd2c7ff57eab86a418332c0f0aee9e19035973f41fea7f11600c2c3bf2"
+    },
+    {
+      "path": "assets/root-CDUxbD5e.css",
+      "captured_as": "files/assets/root-CDUxbD5e.css",
+      "bytes": 15446,
+      "sha256": "3bf1d705840d039bf738c219449574af499733e61d2649d3aa1d5788fd94641d"
+    },
+    {
+      "path": "assets/root-CJmvrm6f.js",
+      "captured_as": "files/assets/root-CJmvrm6f.js",
+      "bytes": 1132,
+      "sha256": "f4e75c8ec597d1e4052c5fb382421ced2e9069cfbc6a25d2cdcb0c65b8cce396"
+    },
+    {
+      "path": "assets/with-props-7VRsLxky.js",
+      "captured_as": "files/assets/with-props-7VRsLxky.js",
+      "bytes": 348,
+      "sha256": "923b7d72c360cff04ce209ecb31eff8f94b3526d0f7d589ad1e4fc5a35db424b"
+    },
+    {
+      "path": "favicon.ico",
+      "captured_as": "files/favicon.ico",
+      "bytes": 15086,
+      "sha256": "c10d2b470d85e242fe26871931b22cd2caf3dfb69299e938d80fac0ca042feea"
+    },
+    {
+      "path": "index.html",
+      "captured_as": "files/index.html",
+      "bytes": 2353,
+      "sha256": "c2e2d133466f39b01e685a43d5f7ea65f328e370153be191845f40e4cb8ce9fe"
+    }
+  ]
+}
